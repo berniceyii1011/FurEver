@@ -7,37 +7,51 @@
 
 <!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<!-- 自定义样式 -->
 <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<header>
-  <a href="index.html">Home</a>
-  <a href="pets.html">Pets</a>
-  <a href="calendar.html">Calendar</a>
-  <a href="map.html" class="active">Map</a>
-  <a href="profile.html">Profile</a>
-</header>
+<div class="content">
+  <header>
+    <div class="logo">
+      <img src="final.png" alt="FurEver Logo">
+    </div>
 
-<div id="filterBox">
-  <label><input type="checkbox" id="showVet" checked> Veterinary Clinics</label>
-  <label><input type="checkbox" id="showPet" checked> Pet Stores</label>
+    <div class="hamburger" onclick="toggleSidebar()">☰</div>
+
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="pets.html">Pets</a>
+      <a href="calendar.html">Calendar</a>
+      <a href="map.html" class="active">Map</a>
+      <a href="profile.html">Profile</a>
+      <a href="#" id="loginBtn">Login/Sign up</a>
+    </nav>
+
+    <div class="sidebar" id="sidebar">
+      <a href="index.html">Home</a>
+      <a href="pets.html">Pets</a>
+      <a href="calendar.html">Calendar</a>
+      <a href="map.html">Map</a>
+      <a href="profile.html">Profile</a>
+      <a href="">Login/Sign up</a>
+    </div>
+  </header>
+
+  <div id="map"></div>
+  <div id="filterBox">
+    <label><input type="checkbox" id="showVet" checked> Veterinary Clinics</label>
+    <label><input type="checkbox" id="showPet" checked> Pet Stores</label>
+  </div>
 </div>
 
-<div id="map"></div>
-<div id="infoBox"></div>
-
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
 <script>
-// 初始化地图
-const map = L.map("map").setView([4.2105, 101.9758], 6);
+// 初始化地图（关闭缩放控件）
+const map = L.map("map", { zoomControl: false }).setView([4.2105, 101.9758], 6);
+
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(map);
 
-const infoBox = document.getElementById("infoBox");
 let vetMarkers = L.layerGroup().addTo(map);
 let petMarkers = L.layerGroup().addTo(map);
 
@@ -47,7 +61,11 @@ const overpassQuery = `
 area["ISO3166-1"="MY"][admin_level=2]->.searchArea;
 (
   node["shop"="pet"](area.searchArea);
+  way["shop"="pet"](area.searchArea);
+  relation["shop"="pet"](area.searchArea);
   node["amenity"="veterinary"](area.searchArea);
+  way["amenity"="veterinary"](area.searchArea);
+  relation["amenity"="veterinary"](area.searchArea);
 );
 out body;
 >;
@@ -61,22 +79,14 @@ fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: overpas
     if(!el.lat || !el.lon) return;
     const name = el.tags.name || "Unknown";
     const type = el.tags.shop || el.tags.amenity || "Unknown";
-    const addr = el.tags["addr:full"] || el.tags["addr:street"] || "Address not available";
-    const phone = el.tags.phone || el.tags["contact:phone"] || "Phone not available";
-    const opening = el.tags.opening_hours || "Opening hours not available";
 
-    const iconUrl = type === "veterinary" ? "icons/veterinary.png" : "icons/petstore.png";
+    const iconUrl = type === "veterinary" ? "location icon red.png" : "location icon yellow.png";
     const icon = L.icon({ iconUrl, iconSize: [25,41], iconAnchor: [12,41], popupAnchor:[1,-34] });
 
-    const marker = L.marker([el.lat, el.lon], {icon}).bindPopup(`<b>${name}</b><br>${type}`);
-    marker.on('click', () => {
-      infoBox.innerHTML = `<h3>${name}</h3>
-        <p>Type: ${type}</p>
-        <p>Address: ${addr}</p>
-        <p>Phone: ${phone}</p>
-        <p>Opening Hours: ${opening}</p>`;
-      infoBox.style.display = 'block';
-    });
+    // 只显示店名 popup
+    const marker = L.marker([el.lat, el.lon], {icon})
+      .bindPopup(`<b>${name}</b>`)
+      .addTo(map);
 
     if(type === "veterinary") vetMarkers.addLayer(marker);
     else petMarkers.addLayer(marker);
@@ -90,6 +100,8 @@ document.getElementById("showVet").addEventListener("change", e => {
 document.getElementById("showPet").addEventListener("change", e => {
   e.target.checked ? map.addLayer(petMarkers) : map.removeLayer(petMarkers);
 });
+
+function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); }
 </script>
 
 </body>
