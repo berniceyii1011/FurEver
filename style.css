@@ -363,3 +363,6 @@ body{
 
 #filterBox label { margin-right: 10px; cursor: pointer; }
 
+.location pin{
+  margin-top: 0.4vh;
+}
